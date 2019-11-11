@@ -3,13 +3,27 @@ const helmet = require('helmet');
 const cors = require('cors');
 const bcrypt = require('bcryptjs')
 const Users = require('./users/users-model');
+const session = require("express-session");
 
 
 const server = express();
 
+const sessionConfig = {
+    name: 'sentinel', 
+    secret: 'shhhhhh!!!! keep it secret!', 
+    cookie: {
+      maxAge:  60 * 60 * 1000, 
+      secure: false, 
+      httpOnly: true 
+    },
+    resave: false, 
+    saveUninitialized: false, 
+  }
+
 server.use(helmet());
 server.use(express.json());
 server.use(cors());
+server.use(session(sessionConfig));
 
 function validateNewUser(req, res, next){
     const newUserToBeRegistered = req.body;
@@ -35,9 +49,10 @@ server.post('/api/login', validateNewUser, (req, res) => {
       .first()
       .then(user => {
         if (user && bcrypt.compareSync(password, user.password)) {
+            req.session.user = user;
           res.status(200).json({ message: `Welcome ${user.username}!` });
         } else {
-          res.status(401).json({ message: 'Invalid Credentials' });
+          res.status(401).json({ message: 'You Shall Not Pass!' });
         }
       })
       .catch(error => {
