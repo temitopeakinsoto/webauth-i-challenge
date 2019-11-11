@@ -11,11 +11,24 @@ server.use(helmet());
 server.use(express.json());
 server.use(cors());
 
-server.get('/', (req, res) => {
-  res.send("It's alive!");
-});
+function validateNewUser(req, res, next){
+    const newUserToBeRegistered = req.body;
+    if (!newUserToBeRegistered) {
+      res.status(400).json({ message: `All new users must have required fields` });
+    } else if (!newUserToBeRegistered.username) {
+      res
+        .status(400)
+        .json({ message: `User must have a username field` });
+    } 
+    else if(!newUserToBeRegistered.password){
+        res.status(400).json({ message: "User must have a password field"})
+    } else {
+      req.user = newUserToBeRegistered;
+      next();
+    }
+}
 
-server.post('/api/login', (req, res) => {
+server.post('/api/login', validateNewUser, (req, res) => {
     let { username, password } = req.body;
   
     Users.findBy({ username })
@@ -42,8 +55,8 @@ server.get('/api/users', (req, res) => {
     });
 })
 
-server.post('/api/register', (req, res) => {
-    let user = req.body;
+server.post('/api/register',validateNewUser, (req, res) => {
+    let user = req.user;
     const hash = bcrypt.hashSync(user.password, 11)
     const newUser = {
       username: req.body.username,
@@ -51,8 +64,8 @@ server.post('/api/register', (req, res) => {
     };
   
     Users.add(newUser)
-      .then(saved => {
-        res.status(201).json(saved);
+      .then(createdUser => {
+        res.status(201).json(createdUser);
       })
       .catch(error => {
         res.status(500).json(error);
