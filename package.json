@@ -10,6 +10,7 @@
   "author": "Temitope Akinsoto",
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
     "eslint": "^6.6.0",
     "express": "^4.17.1",
     "helmet": "^3.21.1",
