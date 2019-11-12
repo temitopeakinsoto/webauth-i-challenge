@@ -93,4 +93,22 @@ server.post("/api/register", validateNewUser, (req, res) => {
     });
 });
 
+server.get("/api/logout", (req, res) => {
+  if (req.session.user) {
+    req.session.destroy(err => {
+      if (err) {
+        res
+          .status(400)
+          .json({ message: `You was an error with this operation : ${err.message}` });
+      } else {
+        res.status(200).json({ message: "Bye, see you later!" });
+      }
+    });
+  } else {
+    res
+      .status(400)
+      .json({ message: "You were never logged-in in the first place!" });
+  }
+});
+
 module.exports = server;
