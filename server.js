@@ -4,6 +4,7 @@ const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const Users = require("./users/users-model");
 const session = require("express-session");
+const KnexSessionStore = require('connect-session-knex')(session);
 
 const server = express();
 
@@ -13,10 +14,17 @@ const sessionConfig = {
   cookie: {
     maxAge: 60 * 60 * 1000,
     secure: false,
-    httpOnly: true
+    httpOnly: true,
   },
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: false,
+  store: new KnexSessionStore({
+    knex: require('./database/db-config'),
+    tablename: 'sessions',
+    sidfieldname: 'sid',
+    createtable: true,
+    clearInterval: 1000 * 60 * 60
+  })
 };
 
 server.use(helmet());
@@ -44,12 +52,12 @@ function restricted(req, res, next) {
   if (req.session && req.session.user) {
     next();
   } else {
-    res.status(400).json({ message: "You shall not pass" });
+    res.status(400).json({ message: "No Credentials Supplied" });
   }
 }
 
 server.post("/api/login", validateNewUser, (req, res) => {
-  let { username, password } = req.body;
+  const { username, password } = req.body;
 
   Users.findBy({ username })
     .first()
@@ -94,7 +102,7 @@ server.post("/api/register", validateNewUser, (req, res) => {
 });
 
 server.get("/api/logout", (req, res) => {
-  if (req.session.user) {
+  if (req.session && req.session.user) {
     req.session.destroy(err => {
       if (err) {
         res
